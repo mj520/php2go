@@ -1250,6 +1250,62 @@ func ArrayReverse(s []interface{}) []interface{} {
 	return s
 }
 
+// ArrayDiff array_diff()
+func ArrayDiff(array1 []string, arrayOthers ...[]string) []string {
+	c := make(map[string]bool)
+	for i := 0; i < len(array1); i++ {
+		if _, hasKey := c[array1[i]]; hasKey {
+			c[array1[i]] = true
+		} else {
+			c[array1[i]] = false
+		}
+	}
+	for i := 0; i < len(arrayOthers); i++ {
+		for j := 0; j < len(arrayOthers[i]); j++ {
+			if _, hasKey := c[arrayOthers[i][j]]; hasKey {
+				c[arrayOthers[i][j]] = true
+			} else {
+				c[arrayOthers[i][j]] = false
+			}
+		}
+	}
+	result := make([]string, 0)
+	for k, v := range c {
+		if !v {
+			result = append(result, k)
+		}
+	}
+	return result
+}
+
+// ArrayUnique array_unique()
+func ArrayUnique(arr []string) []string {
+	size := len(arr)
+	result := make([]string, 0, size)
+	temp := map[string]struct{}{}
+	for i := 0; i < size; i++ {
+		if _, ok := temp[arr[i]]; ok != true {
+			temp[arr[i]] = struct{}{}
+			result = append(result, arr[i])
+		}
+	}
+	return result
+}
+
+//ArrayUniqueInt array_unique()
+func ArrayUniqueInt(arr []int) []int {
+	size := len(arr)
+	result := make([]int, 0, size)
+	temp := map[int]struct{}{}
+	for i := 0; i < size; i++ {
+		if _, ok := temp[arr[i]]; ok != true {
+			temp[arr[i]] = struct{}{}
+			result = append(result, arr[i])
+		}
+	}
+	return result
+}
+
 // Implode implode()
 func Implode(glue string, pieces []string) string {
 	var buf bytes.Buffer
@@ -1362,21 +1418,53 @@ func Decbin(number int64) string {
 }
 
 // Bindec bindec()
-func Bindec(str string) (string, error) {
+func Bindec(str string) (int64, error) {
 	i, err := strconv.ParseInt(str, 2, 0)
 	if err != nil {
-		return "", err
+		return 0, err
 	}
-	return strconv.FormatInt(i, 10), nil
+	return i, nil
 }
 
-// Hex2bin hex2bin()
-func Hex2bin(data string) (string, error) {
-	i, err := strconv.ParseInt(data, 16, 0)
+// Hexbin hexbin()
+func Hexbin(str string) (string, error) {
+	i, err := Hexdec(str)
 	if err != nil {
 		return "", err
 	}
-	return strconv.FormatInt(i, 2), nil
+	return Decbin(i), nil
+}
+
+// Binhex binhex()
+func Binhex(str string) (string, error) {
+	i, err := Bindec(str)
+	if err != nil {
+		return "", err
+	}
+	return DecHex(i), nil
+}
+
+// Hex2bin hex2bin() to AscII
+func Hex2bin(h string) (str string, err error) {
+	l := len(h)
+	length, k := l, 0
+	bHex := make([]byte, l/2)
+	for i := 0; i < length; i += 2 {
+		if l == 1 {
+			break
+		}
+		//每两个字符转换成一个字节
+		s := string(h[i : i+2])
+		//十六进制
+		bt, err := strconv.ParseInt(s, 16, 32)
+		if err != nil {
+			return "", err
+		}
+		bHex[k] = byte(bt)
+		k++
+		l -= 2
+	}
+	return string(bHex), nil
 }
 
 // Bin2hex bin2hex()
@@ -2108,7 +2196,7 @@ func VersionCompare(version1, version2, operator string) bool {
 				}
 			} else if !(p1[0] >= '0' && p1[0] <= '9') && !(p2[0] >= '0' && p2[0] <= '9') { // all digit
 				compare = special(p1, p2)
-			} else {                              // part is digit
+			} else { // part is digit
 				if p1[0] >= '0' && p1[0] <= '9' { // is digit
 					compare = special("#N#", p2)
 				} else {
@@ -2254,27 +2342,20 @@ func ZipOpen(filename string) (*zip.ReadCloser, error) {
 	return zip.OpenReader(filename)
 }
 
-// Pack pack()
-func Pack(order binary.ByteOrder, data interface{}) (string, error) {
-	buf := new(bytes.Buffer)
-	err := binary.Write(buf, order, data)
-	if err != nil {
-		return "", err
-	}
-
-	return buf.String(), nil
+// Pack pack() only number
+func Pack(format []string, args ...int64) string {
+	p := &Protocol{}
+	p.Format = format
+	ret := p.Pack16(args...)
+	return ret
 }
 
-// Unpack unpack()
-func Unpack(order binary.ByteOrder, data string) (interface{}, error) {
-	var result []byte
-	r := bytes.NewReader([]byte(data))
-	err := binary.Read(r, order, &result)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+// Unpack unpack() only number
+func Unpack(format []string, data string) []int64 {
+	p := &Protocol{}
+	p.Format = format
+	ret := p.UnPack16(data)
+	return ret
 }
 
 // Ternary Ternary expression

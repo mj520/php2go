@@ -1,7 +1,7 @@
 # PHP2Go
 
-[![GoDoc](https://godoc.org/github.com/syyongx/php2go?status.svg)](https://godoc.org/github.com/syyongx/php2go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/syyongx/php2go)](https://goreportcard.com/report/github.com/syyongx/php2go)
+[![GoDoc](https://godoc.org/github.com/mj520/php2go?status.svg)](https://godoc.org/github.com/mj520/php2go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/mj520/php2go)](https://goreportcard.com/report/github.com/mj520/php2go)
 [![MIT licensed][3]][4]
 
 [3]: https://img.shields.io/badge/license-MIT-blue.svg
@@ -11,7 +11,7 @@ Use Golang to implement PHP's common built-in functions. About 140+ functions ha
 
 ## Install
 ```shell
-go get github.com/syyongx/php2go
+go get github.com/mj520/php2go
 ```
 
 ## Requirements
@@ -109,6 +109,8 @@ array_shift()
 array_key_exists()
 array_combine()
 array_reverse()
+array_diff
+array_unique ArrayUnique,ArrayUniqueInt
 implode()
 in_array()
 ```
@@ -130,7 +132,9 @@ bin2hex()
 dechex()
 hexdec()
 decoct()
-Octdec()
+octdec()
+hexbin()
+binhex()
 base_convert()
 is_nan()
 ```
@@ -191,6 +195,8 @@ gethostbynamel()
 gethostbyaddr()
 ip2long()
 long2ip()
+pack() only number
+uppack() only number
 ```
 
 ### Misc. Functions
@@ -209,4 +215,4 @@ Ternary(condition bool, trueVal, falseVal interface{}) interface{}
 ```
 
 ## LICENSE
-PHP2Go source code is licensed under the [MIT](https://github.com/syyongx/php2go/blob/master/LICENSE) Licence.
+PHP2Go source code is licensed under the [MIT](https://github.com/mj520/php2go/blob/master/LICENSE) Licence.

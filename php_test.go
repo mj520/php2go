@@ -2,8 +2,8 @@ package php2go
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
+	"log"
 	"os"
 	"reflect"
 	"testing"
@@ -123,6 +123,19 @@ func TestArray(t *testing.T) {
 	tArrayChunk := ArrayChunk(s1, 2)
 	equal(t, [][]interface{}{{"a", "b"}, {"c"}}, tArrayChunk)
 
+	var au = []string{"a", "a"}
+	tau := ArrayUnique(au)
+	equal(t, []string{"a"}, tau)
+
+	var aui = []int{1, 1}
+	taui := ArrayUniqueInt(aui)
+	equal(t, []int{1}, taui)
+
+	var ad1 = []string{"a", "c"}
+	var ad2 = []string{"a", "b"}
+	tad := ArrayDiff(ad1, ad2)
+	equal(t, []string{"c", "b"}, tad)
+
 	var m1 = make(map[interface{}]interface{}, 3)
 	m1[1] = "a"
 	m1["a"] = "b"
@@ -201,28 +214,31 @@ func TestMath(t *testing.T) {
 	equal(t, "1100100", tDecbin)
 
 	tBindec, _ := Bindec(tDecbin)
-	equal(t, "100", tBindec)
+	equal(t, int64(100), tBindec)
 
-	tBin2hex, _ := Bin2hex(tDecbin)
-	equal(t, "64", tBin2hex)
+	tBinhex, _ := Binhex(tDecbin)
+	equal(t, "64", tBinhex)
 
-	tBin2hex2, _ := Bin2hex("你好世界")
-	equal(t, "e4bda0e5a5bde4b896e7958c", tBin2hex2)
-
-	tHexdec, _ := Hexdec(tBin2hex)
+	tHexdec, _ := Hexdec(tBinhex)
 	equal(t, int64(100), tHexdec)
 
-	tHex2bin, _ := Hex2bin(tBin2hex)
-	equal(t, "1100100", tHex2bin)
+	tDechex := Dechex(tHexdec)
+	equal(t, "64", tDechex)
+
+	tHexbin, _ := Hexbin(tDechex)
+	equal(t, "1100100", tHexbin)
+
+	tBin2hex, _ := Bin2hex("你好世界")
+	equal(t, "e4bda0e5a5bde4b896e7958c", tBin2hex)
+
+	tHex2binStr, _ := Hex2bin(tBin2hex)
+	equal(t, "你好世界", tHex2binStr)
 
 	tDecoct := Decoct(tHexdec)
 	equal(t, "144", tDecoct)
 
 	tOctdec, _ := Octdec(tDecoct)
 	equal(t, int64(100), tOctdec)
-
-	tDechex := Dechex(tHexdec)
-	equal(t, "64", tDechex)
 
 	tBaseConvert, _ := BaseConvert("64", 16, 2)
 	equal(t, "1100100", tBaseConvert)
@@ -295,19 +311,59 @@ func TestMisc(t *testing.T) {
 
 	gt(t, float64(MemoryGetUsage(true)), 0)
 
-	tPack, err := Pack(binary.LittleEndian, []byte("abc"))
-	fmt.Println(err)
-	fmt.Println(tPack)
+	tPack := Pack([]string{"N2", "N4"}, 123, 45678)
+	equal(t, "7b006eb20000", tPack)
 
-	tUnpack, err := Unpack(binary.LittleEndian, tPack)
-	fmt.Println(err)
-	fmt.Println(tUnpack)
+	tUnpack := Unpack([]string{"N2", "N4"}, tPack)
+	equal(t, int64(123), tUnpack[0])
+	equal(t, int64(45678), tUnpack[1])
+
+	var i interface{}
+	i = "123"
+	ti := GetInterfaceToInt(i)
+	equal(t, 123, ti)
+
+	i = "123.0"
+	tf := GetInterfaceToFloat(i)
+	equal(t, 123.0, tf)
+
+	i = 123.0
+	ts := GetInterfaceToString(i)
+	equal(t, "123", ts)
 }
 
 func BenchmarkFn(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		ChunkSplit("abc", 2, "\r\n")
 	}
+}
+
+func TestPack(t *testing.T) {
+	i := int64(4000000000)
+	hexEncode := HexEncode(i, 62)
+	equal(t, "4mHAJ2", hexEncode)
+	hexDecode := HexDecode(hexEncode, 62)
+	equal(t, i, hexDecode)
+
+	var i1 uint8 = 100
+	var i2 uint32 = 1000000000
+	var i3 uint64 = 100000000000000000
+	p := &Protocol{}
+	p.Format = []string{"N2", "N4", "N8"}
+	id := p.Pack16(
+		int64(i1),
+		int64(i2),
+		int64(i3),
+	)
+	log.Println(id)
+	p2 := &Protocol{}
+	p2.Format = p.Format
+	s := p2.UnPack16(id)
+	log.Println(s)
+	equal(t, i1, uint8(s[0]))
+	equal(t, i2, uint32(s[1]))
+	equal(t, i3, uint64(s[2]))
+
 }
 
 // Expected to be equal.
