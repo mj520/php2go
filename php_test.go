@@ -363,7 +363,20 @@ func TestPack(t *testing.T) {
 	equal(t, i1, uint8(s[0]))
 	equal(t, i2, uint32(s[1]))
 	equal(t, i3, uint64(s[2]))
+}
 
+func TestConnection(t *testing.T) {
+	NewServer("127.0.0.1", 80)
+	conn := NewConnection("127.0.0.2", 443)
+	clientId := conn.Pack()
+	log.Println("clientId", clientId)
+	unConn := Connection{}
+	unConn.UnPack(clientId)
+	equal(t, "127.0.0.1:80", unConn.Server.GetAddress())
+	equal(t, "127.0.0.2:443", unConn.Client.GetAddress())
+
+	log.Println("server ip:", GetInBoundIP())
+	log.Println("local ip", GetOutBoundIP())
 }
 
 // Expected to be equal.
