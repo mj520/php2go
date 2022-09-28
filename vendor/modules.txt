@@ -1,14 +1,20 @@
 # github.com/Azure/go-ntlmssp v0.0.0-20200615164410-66371956d46c
+## explicit
 github.com/Azure/go-ntlmssp
 # github.com/armon/go-metrics v0.3.10
+## explicit; go 1.12
 github.com/armon/go-metrics
 # github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
+## explicit
 github.com/armon/go-socks5
 # github.com/coreos/go-oidc v2.2.1+incompatible
+## explicit
 github.com/coreos/go-oidc
 # github.com/fatedier/beego v0.0.0-20171024143340-6c6a4f5bd5eb
+## explicit
 github.com/fatedier/beego/logs
 # github.com/fatedier/frp v0.44.0
+## explicit; go 1.16
 github.com/fatedier/frp/assets
 github.com/fatedier/frp/client
 github.com/fatedier/frp/client/event
@@ -29,6 +35,7 @@ github.com/fatedier/frp/pkg/util/util
 github.com/fatedier/frp/pkg/util/version
 github.com/fatedier/frp/pkg/util/xlog
 # github.com/fatedier/golib v0.1.1-0.20220321042308-c306138b83ac
+## explicit; go 1.17
 github.com/fatedier/golib/control/shutdown
 github.com/fatedier/golib/crypto
 github.com/fatedier/golib/errors
@@ -38,67 +45,97 @@ github.com/fatedier/golib/net
 github.com/fatedier/golib/net/dial
 github.com/fatedier/golib/pool
 # github.com/fatedier/kcp-go v2.0.4-0.20190803094908-fe8645b0a904+incompatible
+## explicit
 github.com/fatedier/kcp-go
 # github.com/fatih/color v1.9.0
+## explicit; go 1.13
 github.com/fatih/color
 # github.com/go-playground/locales v0.13.0
+## explicit; go 1.13
 github.com/go-playground/locales
 github.com/go-playground/locales/currency
 # github.com/go-playground/universal-translator v0.17.0
+## explicit; go 1.13
 github.com/go-playground/universal-translator
 # github.com/go-playground/validator/v10 v10.6.1
+## explicit; go 1.13
 github.com/go-playground/validator/v10
 # github.com/golang/protobuf v1.5.2
+## explicit; go 1.9
 github.com/golang/protobuf/proto
 # github.com/golang/snappy v0.0.1
+## explicit
 github.com/golang/snappy
 # github.com/gorilla/mux v1.8.0
+## explicit; go 1.12
 github.com/gorilla/mux
 # github.com/hashicorp/consul/api v1.15.2
+## explicit; go 1.12
 github.com/hashicorp/consul/api
 github.com/hashicorp/consul/api/watch
 # github.com/hashicorp/go-cleanhttp v0.5.1
+## explicit
 github.com/hashicorp/go-cleanhttp
 # github.com/hashicorp/go-hclog v0.14.1
+## explicit; go 1.13
 github.com/hashicorp/go-hclog
 # github.com/hashicorp/go-immutable-radix v1.3.0
+## explicit
 github.com/hashicorp/go-immutable-radix
 # github.com/hashicorp/go-rootcerts v1.0.2
+## explicit; go 1.12
 github.com/hashicorp/go-rootcerts
 # github.com/hashicorp/golang-lru v0.5.4
+## explicit; go 1.12
 github.com/hashicorp/golang-lru/simplelru
 # github.com/hashicorp/serf v0.9.7
+## explicit; go 1.12
 github.com/hashicorp/serf/coordinate
 # github.com/hashicorp/yamux v0.0.0-20210707203944-259a57b3608c
+## explicit; go 1.15
 github.com/hashicorp/yamux
 # github.com/klauspost/cpuid/v2 v2.0.6
+## explicit; go 1.13
 github.com/klauspost/cpuid/v2
 # github.com/klauspost/reedsolomon v1.9.15
+## explicit; go 1.14
 github.com/klauspost/reedsolomon
 # github.com/leodido/go-urn v1.2.1
+## explicit; go 1.13
 github.com/leodido/go-urn
 # github.com/mattn/go-colorable v0.1.6
+## explicit; go 1.13
 github.com/mattn/go-colorable
 # github.com/mattn/go-isatty v0.0.12
+## explicit; go 1.12
 github.com/mattn/go-isatty
 # github.com/mitchellh/go-homedir v1.1.0
+## explicit
 github.com/mitchellh/go-homedir
 # github.com/mitchellh/mapstructure v1.4.1
+## explicit; go 1.14
 github.com/mitchellh/mapstructure
 # github.com/pires/go-proxyproto v0.6.2
+## explicit; go 1.13
 github.com/pires/go-proxyproto
 # github.com/pkg/errors v0.9.1
+## explicit
 github.com/pkg/errors
 # github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35
+## explicit
 github.com/pquerna/cachecontrol
 github.com/pquerna/cachecontrol/cacheobject
 # github.com/templexxx/cpufeat v0.0.0-20180724012125-cef66df7f161
+## explicit
 github.com/templexxx/cpufeat
 # github.com/templexxx/xor v0.0.0-20191217153810-f85b25db303b
+## explicit
 github.com/templexxx/xor
 # github.com/tjfoc/gmsm v1.4.1
+## explicit; go 1.14
 github.com/tjfoc/gmsm/sm4
 # golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
+## explicit; go 1.11
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/cast5
 golang.org/x/crypto/ed25519
@@ -113,6 +150,7 @@ golang.org/x/crypto/tea
 golang.org/x/crypto/twofish
 golang.org/x/crypto/xtea
 # golang.org/x/net v0.0.0-20211216030914-fe4d6282115f
+## explicit; go 1.17
 golang.org/x/net/bpf
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
@@ -124,22 +162,27 @@ golang.org/x/net/ipv6
 golang.org/x/net/proxy
 golang.org/x/net/websocket
 # golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+## explicit; go 1.11
 golang.org/x/oauth2
 golang.org/x/oauth2/clientcredentials
 golang.org/x/oauth2/internal
 # golang.org/x/sys v0.0.0-20220412211240-33da011f77ad
+## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/text v0.3.6
+## explicit; go 1.11
 golang.org/x/text/internal/language
 golang.org/x/text/internal/language/compact
 golang.org/x/text/internal/tag
 golang.org/x/text/language
 # golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
+## explicit
 golang.org/x/time/rate
 # google.golang.org/appengine v1.6.5
+## explicit; go 1.11
 google.golang.org/appengine/internal
 google.golang.org/appengine/internal/base
 google.golang.org/appengine/internal/datastore
@@ -148,6 +191,7 @@ google.golang.org/appengine/internal/remote_api
 google.golang.org/appengine/internal/urlfetch
 google.golang.org/appengine/urlfetch
 # google.golang.org/protobuf v1.26.0
+## explicit; go 1.9
 google.golang.org/protobuf/encoding/prototext
 google.golang.org/protobuf/encoding/protowire
 google.golang.org/protobuf/internal/descfmt
@@ -176,8 +220,10 @@ google.golang.org/protobuf/runtime/protoiface
 google.golang.org/protobuf/runtime/protoimpl
 google.golang.org/protobuf/types/descriptorpb
 # gopkg.in/ini.v1 v1.62.0
+## explicit
 gopkg.in/ini.v1
 # gopkg.in/square/go-jose.v2 v2.4.1
+## explicit
 gopkg.in/square/go-jose.v2
 gopkg.in/square/go-jose.v2/cipher
 gopkg.in/square/go-jose.v2/json
