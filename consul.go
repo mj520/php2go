@@ -122,7 +122,7 @@ func GetAgentServiceCheck(service *api.AgentServiceRegistration, remotePort int,
 	if IsFrp() {
 		cfg := GetFrpConfig()
 		address = cfg.ServerAddr
-		checkPath += service.ID
+		checkPath += "/" + service.ID
 	}
 	if checkPath != consts.TCPProxy {
 		var port string
