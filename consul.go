@@ -107,7 +107,8 @@ func (c *ConsulApi) Service(service string) ([]*api.ServiceEntry, error) {
 	return servers, nil
 }
 
-//GetAgentServiceCheck 监控检查 注意frp 反向代理 default port=service.Port path=/health
+//GetAgentServiceCheck 健康检查 checkPath!=tcp 走http 为空时 默认/health
+//CONSUL_FRP=1 特殊使用 http 检查路径为 /{checkPath}/{service.ID} 注意绑定 http.HandleFunc("/health/", Health) 注意斜杠兼容 增加的server.ID
 func GetAgentServiceCheck(service *api.AgentServiceRegistration, remotePort int, checkPath string) *api.AgentServiceCheck {
 	check := &api.AgentServiceCheck{
 		Name:     service.ID,
@@ -121,13 +122,14 @@ func GetAgentServiceCheck(service *api.AgentServiceRegistration, remotePort int,
 	if IsFrp() {
 		cfg := GetFrpConfig()
 		address = cfg.ServerAddr
+		checkPath += service.ID
 	}
 	if checkPath != consts.TCPProxy {
 		var port string
 		if remotePort != 80 {
 			port = ":" + strconv.Itoa(remotePort)
 		}
-		check.HTTP = fmt.Sprintf(`http://%s%s%s`, address, port, checkPath+"/"+service.ID) // 这里一定是外部可以访问的地址
+		check.HTTP = fmt.Sprintf(`http://%s%s%s`, address, port, checkPath)
 	} else {
 		check.TCP = fmt.Sprintf(`%s:%d`, address, remotePort)
 	}
@@ -154,7 +156,7 @@ func GetFrpConfig() config.ClientCommonConf {
 	return cfg
 }
 
-//SetAgentServiceProxyFrp 反向代理 checkPath=tcp 其他走http 必须使用域名 需要绑定 /{checkPath}/
+//SetAgentServiceProxyFrp CONSUL_FRP_ADDR=必须子域名;CONSUL_FRP_PORT=7000;CONSUL_FRP_TOKEN=;CONSUL_FRP=1
 func SetAgentServiceProxyFrp(service *api.AgentServiceRegistration, remotePort int, checkPath string) {
 	cfg := GetFrpConfig()
 	if checkPath == "" {
