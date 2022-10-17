@@ -17,7 +17,10 @@ type ConsulApi struct {
 }
 
 // NewConsul 连接至consul服务返回一个ConsulApi对象
-func NewConsul(addr string) (*ConsulApi, error) {
+func NewConsul(addr string, auth string) (*ConsulApi, error) {
+	if auth != "" {
+		os.Setenv(api.HTTPAuthEnvName, auth)
+	}
 	cfg := api.DefaultConfig()
 	if addr != "" {
 		cfg.Address = addr
@@ -51,7 +54,7 @@ func (c *ConsulApi) GetLock(key string, value string, ttl string) (lock *api.Loc
 	return lock, nil
 }
 
-//ServiceWatch 服务监控
+// ServiceWatch 服务监控
 func (c *ConsulApi) ServiceWatch(service string, handle watch.HandlerFunc) {
 	params := make(map[string]interface{})
 	params["type"] = "service"
@@ -92,12 +95,12 @@ func (c *ConsulApi) ServiceList(tag string) (map[string]*api.AgentService, error
 	return c.client.Agent().ServicesWithFilter(fmt.Sprintf(`"%s" in Tags`, tag))
 }
 
-//ServiceDeregister 注销服务
+// ServiceDeregister 注销服务
 func (c *ConsulApi) ServiceDeregister(serviceID string) error {
 	return c.client.Agent().ServiceDeregister(serviceID)
 }
 
-//Service 服务发现 服务名称相同的才会返回多个
+// Service 服务发现 服务名称相同的才会返回多个
 func (c *ConsulApi) Service(service string) ([]*api.ServiceEntry, error) {
 	servers, _, err := c.client.Health().Service(service, "", true, nil)
 	if err != nil {
@@ -107,8 +110,8 @@ func (c *ConsulApi) Service(service string) ([]*api.ServiceEntry, error) {
 	return servers, nil
 }
 
-//GetAgentServiceCheck 健康检查 checkPath!=tcp 走http 为空时 默认/health
-//CONSUL_FRP=1 特殊使用 http 检查路径为 /{checkPath}/{service.ID} 注意绑定 http.HandleFunc("/health/", Health) 注意斜杠兼容 增加的server.ID
+// GetAgentServiceCheck 健康检查 checkPath!=tcp 走http 为空时 默认/health
+// CONSUL_FRP=1 特殊使用 http 检查路径为 /{checkPath}/{service.ID} 注意绑定 http.HandleFunc("/health/", Health) 注意斜杠兼容 增加的server.ID
 func GetAgentServiceCheck(service *api.AgentServiceRegistration, remotePort int, checkPath string) *api.AgentServiceCheck {
 	check := &api.AgentServiceCheck{
 		Name:     service.ID,
@@ -156,7 +159,7 @@ func GetFrpConfig() config.ClientCommonConf {
 	return cfg
 }
 
-//SetAgentServiceProxyFrp CONSUL_FRP_ADDR=必须子域名;CONSUL_FRP_PORT=7000;CONSUL_FRP_TOKEN=;CONSUL_FRP=1
+// SetAgentServiceProxyFrp CONSUL_FRP_ADDR=必须子域名;CONSUL_FRP_PORT=7000;CONSUL_FRP_TOKEN=;CONSUL_FRP=1
 func SetAgentServiceProxyFrp(service *api.AgentServiceRegistration, remotePort int, checkPath string) {
 	cfg := GetFrpConfig()
 	if checkPath == "" {
