@@ -1292,7 +1292,7 @@ func ArrayUnique(arr []string) []string {
 	return result
 }
 
-//ArrayUniqueInt array_unique()
+// ArrayUniqueInt array_unique()
 func ArrayUniqueInt(arr []int) []int {
 	size := len(arr)
 	result := make([]int, 0, size)
@@ -1861,8 +1861,9 @@ func IsNumeric(val interface{}) bool {
 // returnVar, 0: succ; 1: fail
 // Return the last line from the result of the command.
 // command format eg:
-//   "ls -a"
-//   "/bin/bash -c \"ls -a\""
+//
+//	"ls -a"
+//	"/bin/bash -c \"ls -a\""
 func Exec(command string, output *[]string, returnVar *int) string {
 	q := rune(0)
 	parts := strings.FieldsFunc(command, func(r rune) bool {
@@ -2365,4 +2366,26 @@ func Ternary(condition bool, trueVal, falseVal interface{}) interface{} {
 		return trueVal
 	}
 	return falseVal
+}
+
+// RandomString - Generate a random string of a-z chars with len = l
+func RandomString(l int) string {
+	bytes := make([]byte, l)
+	for i := 0; i < l; i++ {
+		bytes[i] = byte(97 + rand.Intn(25))
+	}
+	return string(bytes)
+}
+
+// RandStringRunes - generate random string using random int
+func RandStringRunes(l int, runes string) string {
+	if runes == "" {
+		runes = HexChar
+	}
+	var letters = []rune(runes)
+	b := make([]rune, l)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }
