@@ -122,3 +122,25 @@ func HttpJson(url string, data interface{}) ([]byte, error) {
 	}
 	return body, err
 }
+
+// GetClientIp 获取客户端IP
+func GetClientIp(r *http.Request) (ip string) {
+	headers := []string{"X-Real-IP", "X-Forwarded-For"}
+	for _, header := range headers {
+		ip = r.Header.Get(header)
+		if ip != "" {
+			ip = strings.Split(ip, ",")[0]
+			break
+		}
+	}
+	if ip == "" {
+		ip = r.RemoteAddr
+		if strings.ContainsRune(r.RemoteAddr, ':') {
+			ip, _, _ = net.SplitHostPort(r.RemoteAddr)
+		}
+	}
+	if ip == "::1" || ip == "" {
+		ip = "127.0.0.1"
+	}
+	return ip
+}
