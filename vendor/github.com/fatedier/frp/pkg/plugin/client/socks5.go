@@ -19,9 +19,9 @@ import (
 	"log"
 	"net"
 
-	frpNet "github.com/fatedier/frp/pkg/util/net"
-
 	gosocks5 "github.com/armon/go-socks5"
+
+	utilnet "github.com/fatedier/frp/pkg/util/net"
 )
 
 const PluginSocks5 = "socks5"
@@ -32,9 +32,6 @@ func init() {
 
 type Socks5Plugin struct {
 	Server *gosocks5.Server
-
-	user   string
-	passwd string
 }
 
 func NewSocks5Plugin(params map[string]string) (p Plugin, err error) {
@@ -53,10 +50,10 @@ func NewSocks5Plugin(params map[string]string) (p Plugin, err error) {
 	return
 }
 
-func (sp *Socks5Plugin) Handle(conn io.ReadWriteCloser, realConn net.Conn, extraBufToLocal []byte) {
+func (sp *Socks5Plugin) Handle(conn io.ReadWriteCloser, realConn net.Conn, _ []byte) {
 	defer conn.Close()
-	wrapConn := frpNet.WrapReadWriteCloserToConn(conn, realConn)
-	sp.Server.ServeConn(wrapConn)
+	wrapConn := utilnet.WrapReadWriteCloserToConn(conn, realConn)
+	_ = sp.Server.ServeConn(wrapConn)
 }
 
 func (sp *Socks5Plugin) Name() string {

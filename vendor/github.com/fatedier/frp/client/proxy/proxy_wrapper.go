@@ -1,3 +1,17 @@
+// Copyright 2023 The frp Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package proxy
 
 import (
@@ -8,13 +22,14 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/fatedier/golib/errors"
+
 	"github.com/fatedier/frp/client/event"
 	"github.com/fatedier/frp/client/health"
 	"github.com/fatedier/frp/pkg/config"
 	"github.com/fatedier/frp/pkg/msg"
+	"github.com/fatedier/frp/pkg/transport"
 	"github.com/fatedier/frp/pkg/util/xlog"
-
-	"github.com/fatedier/golib/errors"
 )
 
 const (
@@ -27,9 +42,9 @@ const (
 )
 
 var (
-	statusCheckInterval time.Duration = 3 * time.Second
-	waitResponseTimeout               = 20 * time.Second
-	startErrTimeout                   = 30 * time.Second
+	statusCheckInterval = 3 * time.Second
+	waitResponseTimeout = 20 * time.Second
+	startErrTimeout     = 30 * time.Second
 )
 
 type WorkingStatus struct {
@@ -56,6 +71,8 @@ type Wrapper struct {
 	// event handler
 	handler event.Handler
 
+	msgTransporter transport.MessageTransporter
+
 	health           uint32
 	lastSendStartMsg time.Time
 	lastStartErr     time.Time
@@ -67,8 +84,14 @@ type Wrapper struct {
 	ctx context.Context
 }
 
-func NewWrapper(ctx context.Context, cfg config.ProxyConf, clientCfg config.ClientCommonConf, eventHandler event.Handler, serverUDPPort int) *Wrapper {
-	baseInfo := cfg.GetBaseInfo()
+func NewWrapper(
+	ctx context.Context,
+	cfg config.ProxyConf,
+	clientCfg config.ClientCommonConf,
+	eventHandler event.Handler,
+	msgTransporter transport.MessageTransporter,
+) *Wrapper {
+	baseInfo := cfg.GetBaseConfig()
 	xl := xlog.FromContextSafe(ctx).Spawn().AppendPrefix(baseInfo.ProxyName)
 	pw := &Wrapper{
 		WorkingStatus: WorkingStatus{
@@ -80,6 +103,7 @@ func NewWrapper(ctx context.Context, cfg config.ProxyConf, clientCfg config.Clie
 		closeCh:        make(chan struct{}),
 		healthNotifyCh: make(chan struct{}),
 		handler:        eventHandler,
+		msgTransporter: msgTransporter,
 		xl:             xl,
 		ctx:            xlog.NewContext(ctx, xl),
 	}
@@ -92,7 +116,7 @@ func NewWrapper(ctx context.Context, cfg config.ProxyConf, clientCfg config.Clie
 		xl.Trace("enable health check monitor")
 	}
 
-	pw.pxy = NewProxy(pw.ctx, pw.Cfg, clientCfg, serverUDPPort)
+	pw.pxy = NewProxy(pw.ctx, pw.Cfg, clientCfg, pw.msgTransporter)
 	return pw
 }
 
@@ -145,7 +169,7 @@ func (pw *Wrapper) Stop() {
 }
 
 func (pw *Wrapper) close() {
-	pw.handler(event.EvCloseProxy, &event.CloseProxyPayload{
+	_ = pw.handler(&event.CloseProxyPayload{
 		CloseProxyMsg: &msg.CloseProxy{
 			ProxyName: pw.Name,
 		},
@@ -174,7 +198,7 @@ func (pw *Wrapper) checkWorker() {
 				var newProxyMsg msg.NewProxy
 				pw.Cfg.MarshalToMsg(&newProxyMsg)
 				pw.lastSendStartMsg = now
-				pw.handler(event.EvStartProxy, &event.StartProxyPayload{
+				_ = pw.handler(&event.StartProxyPayload{
 					NewProxyMsg: &newProxyMsg,
 				})
 			}
@@ -201,7 +225,7 @@ func (pw *Wrapper) checkWorker() {
 func (pw *Wrapper) statusNormalCallback() {
 	xl := pw.xl
 	atomic.StoreUint32(&pw.health, 0)
-	errors.PanicToError(func() {
+	_ = errors.PanicToError(func() {
 		select {
 		case pw.healthNotifyCh <- struct{}{}:
 		default:
@@ -213,7 +237,7 @@ func (pw *Wrapper) statusNormalCallback() {
 func (pw *Wrapper) statusFailedCallback() {
 	xl := pw.xl
 	atomic.StoreUint32(&pw.health, 1)
-	errors.PanicToError(func() {
+	_ = errors.PanicToError(func() {
 		select {
 		case pw.healthNotifyCh <- struct{}{}:
 		default:

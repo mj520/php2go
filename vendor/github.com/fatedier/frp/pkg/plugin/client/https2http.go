@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	"github.com/fatedier/frp/pkg/transport"
-	frpNet "github.com/fatedier/frp/pkg/util/net"
+	utilnet "github.com/fatedier/frp/pkg/util/net"
 )
 
 const PluginHTTPS2HTTP = "https2http"
@@ -106,7 +106,9 @@ func NewHTTPS2HTTPPlugin(params map[string]string) (Plugin, error) {
 	}
 	ln := tls.NewListener(listener, tlsConfig)
 
-	go p.s.Serve(ln)
+	go func() {
+		_ = p.s.Serve(ln)
+	}()
 	return p, nil
 }
 
@@ -120,9 +122,9 @@ func (p *HTTPS2HTTPPlugin) genTLSConfig() (*tls.Config, error) {
 	return config, nil
 }
 
-func (p *HTTPS2HTTPPlugin) Handle(conn io.ReadWriteCloser, realConn net.Conn, extraBufToLocal []byte) {
-	wrapConn := frpNet.WrapReadWriteCloserToConn(conn, realConn)
-	p.l.PutConn(wrapConn)
+func (p *HTTPS2HTTPPlugin) Handle(conn io.ReadWriteCloser, realConn net.Conn, _ []byte) {
+	wrapConn := utilnet.WrapReadWriteCloserToConn(conn, realConn)
+	_ = p.l.PutConn(wrapConn)
 }
 
 func (p *HTTPS2HTTPPlugin) Name() string {
@@ -130,8 +132,5 @@ func (p *HTTPS2HTTPPlugin) Name() string {
 }
 
 func (p *HTTPS2HTTPPlugin) Close() error {
-	if err := p.s.Close(); err != nil {
-		return err
-	}
-	return nil
+	return p.s.Close()
 }

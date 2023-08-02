@@ -20,25 +20,33 @@ import (
 
 	"github.com/fatedier/golib/crypto"
 	"github.com/fatedier/golib/pool"
+	"github.com/golang/snappy"
 )
 
 // Join two io.ReadWriteCloser and do some operations.
-func Join(c1 io.ReadWriteCloser, c2 io.ReadWriteCloser) (inCount int64, outCount int64) {
+func Join(c1 io.ReadWriteCloser, c2 io.ReadWriteCloser) (inCount int64, outCount int64, errors []error) {
 	var wait sync.WaitGroup
-	pipe := func(to io.ReadWriteCloser, from io.ReadWriteCloser, count *int64) {
+	recordErrs := make([]error, 2)
+	pipe := func(number int, to io.ReadWriteCloser, from io.ReadWriteCloser, count *int64) {
+		defer wait.Done()
 		defer to.Close()
 		defer from.Close()
-		defer wait.Done()
 
 		buf := pool.GetBuf(16 * 1024)
 		defer pool.PutBuf(buf)
-		*count, _ = io.CopyBuffer(to, from, buf)
+		*count, recordErrs[number] = io.CopyBuffer(to, from, buf)
 	}
 
 	wait.Add(2)
-	go pipe(c1, c2, &inCount)
-	go pipe(c2, c1, &outCount)
+	go pipe(0, c1, c2, &inCount)
+	go pipe(1, c2, c1, &outCount)
 	wait.Wait()
+
+	for _, e := range recordErrs {
+		if e != nil {
+			errors = append(errors, e)
+		}
+	}
 	return
 }
 
@@ -53,14 +61,28 @@ func WithEncryption(rwc io.ReadWriteCloser, key []byte) (io.ReadWriteCloser, err
 }
 
 func WithCompression(rwc io.ReadWriteCloser) io.ReadWriteCloser {
-	sr := pool.GetSnappyReader(rwc)
-	sw := pool.GetSnappyWriter(rwc)
+	sr := snappy.NewReader(rwc)
+	sw := snappy.NewWriter(rwc)
 	return WrapReadWriteCloser(sr, sw, func() error {
 		err := rwc.Close()
-		pool.PutSnappyReader(sr)
-		pool.PutSnappyWriter(sw)
 		return err
 	})
+}
+
+// WithCompressionFromPool will get snappy reader and writer from pool.
+// You can recycle the snappy reader and writer by calling the returned recycle function, but it is not necessary.
+func WithCompressionFromPool(rwc io.ReadWriteCloser) (out io.ReadWriteCloser, recycle func()) {
+	sr := pool.GetSnappyReader(rwc)
+	sw := pool.GetSnappyWriter(rwc)
+	out = WrapReadWriteCloser(sr, sw, func() error {
+		err := rwc.Close()
+		return err
+	})
+	recycle = func() {
+		pool.PutSnappyReader(sr)
+		pool.PutSnappyWriter(sw)
+	}
+	return
 }
 
 type ReadWriteCloser struct {
@@ -90,35 +112,17 @@ func (rwc *ReadWriteCloser) Write(p []byte) (n int, err error) {
 	return rwc.w.Write(p)
 }
 
-func (rwc *ReadWriteCloser) Close() (errRet error) {
+func (rwc *ReadWriteCloser) Close() error {
 	rwc.mu.Lock()
 	if rwc.closed {
 		rwc.mu.Unlock()
-		return
+		return nil
 	}
 	rwc.closed = true
 	rwc.mu.Unlock()
 
-	var err error
-	if rc, ok := rwc.r.(io.Closer); ok {
-		err = rc.Close()
-		if err != nil {
-			errRet = err
-		}
-	}
-
-	if wc, ok := rwc.w.(io.Closer); ok {
-		err = wc.Close()
-		if err != nil {
-			errRet = err
-		}
-	}
-
 	if rwc.closeFn != nil {
-		err = rwc.closeFn()
-		if err != nil {
-			errRet = err
-		}
+		return rwc.closeFn()
 	}
-	return
+	return nil
 }

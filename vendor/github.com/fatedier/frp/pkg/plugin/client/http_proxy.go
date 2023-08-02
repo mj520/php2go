@@ -21,11 +21,13 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 
-	frpNet "github.com/fatedier/frp/pkg/util/net"
+	libio "github.com/fatedier/golib/io"
+	libnet "github.com/fatedier/golib/net"
 
-	frpIo "github.com/fatedier/golib/io"
-	gnet "github.com/fatedier/golib/net"
+	utilnet "github.com/fatedier/frp/pkg/util/net"
+	"github.com/fatedier/frp/pkg/util/util"
 )
 
 const PluginHTTPProxy = "http_proxy"
@@ -56,7 +58,9 @@ func NewHTTPProxyPlugin(params map[string]string) (Plugin, error) {
 		Handler: hp,
 	}
 
-	go hp.s.Serve(listener)
+	go func() {
+		_ = hp.s.Serve(listener)
+	}()
 	return hp, nil
 }
 
@@ -64,10 +68,10 @@ func (hp *HTTPProxy) Name() string {
 	return PluginHTTPProxy
 }
 
-func (hp *HTTPProxy) Handle(conn io.ReadWriteCloser, realConn net.Conn, extraBufToLocal []byte) {
-	wrapConn := frpNet.WrapReadWriteCloserToConn(conn, realConn)
+func (hp *HTTPProxy) Handle(conn io.ReadWriteCloser, realConn net.Conn, _ []byte) {
+	wrapConn := utilnet.WrapReadWriteCloserToConn(conn, realConn)
 
-	sc, rd := gnet.NewSharedConn(wrapConn)
+	sc, rd := libnet.NewSharedConn(wrapConn)
 	firstBytes := make([]byte, 7)
 	_, err := rd.Read(firstBytes)
 	if err != nil {
@@ -82,12 +86,11 @@ func (hp *HTTPProxy) Handle(conn io.ReadWriteCloser, realConn net.Conn, extraBuf
 			wrapConn.Close()
 			return
 		}
-		hp.handleConnectReq(request, frpIo.WrapReadWriteCloser(bufRd, wrapConn, wrapConn.Close))
+		hp.handleConnectReq(request, libio.WrapReadWriteCloser(bufRd, wrapConn, wrapConn.Close))
 		return
 	}
 
-	hp.l.PutConn(sc)
-	return
+	_ = hp.l.PutConn(sc)
 }
 
 func (hp *HTTPProxy) Close() error {
@@ -153,9 +156,9 @@ func (hp *HTTPProxy) ConnectHandler(rw http.ResponseWriter, req *http.Request) {
 		client.Close()
 		return
 	}
-	client.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+	_, _ = client.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
 
-	go frpIo.Join(remote, client)
+	go libio.Join(remote, client)
 }
 
 func (hp *HTTPProxy) Auth(req *http.Request) bool {
@@ -178,7 +181,9 @@ func (hp *HTTPProxy) Auth(req *http.Request) bool {
 		return false
 	}
 
-	if pair[0] != hp.AuthUser || pair[1] != hp.AuthPasswd {
+	if !util.ConstantTimeEqString(pair[0], hp.AuthUser) ||
+		!util.ConstantTimeEqString(pair[1], hp.AuthPasswd) {
+		time.Sleep(200 * time.Millisecond)
 		return false
 	}
 	return true
@@ -188,7 +193,10 @@ func (hp *HTTPProxy) handleConnectReq(req *http.Request, rwc io.ReadWriteCloser)
 	defer rwc.Close()
 	if ok := hp.Auth(req); !ok {
 		res := getBadResponse()
-		res.Write(rwc)
+		_ = res.Write(rwc)
+		if res.Body != nil {
+			res.Body.Close()
+		}
 		return
 	}
 
@@ -200,12 +208,12 @@ func (hp *HTTPProxy) handleConnectReq(req *http.Request, rwc io.ReadWriteCloser)
 			ProtoMajor: 1,
 			ProtoMinor: 1,
 		}
-		res.Write(rwc)
+		_ = res.Write(rwc)
 		return
 	}
-	rwc.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+	_, _ = rwc.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
 
-	frpIo.Join(remote, rwc)
+	libio.Join(remote, rwc)
 }
 
 func copyHeaders(dst, src http.Header) {
