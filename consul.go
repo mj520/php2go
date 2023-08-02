@@ -1,6 +1,7 @@
 package php2go
 
 import (
+	"context"
 	"fmt"
 	"github.com/fatedier/frp/client"
 	"github.com/fatedier/frp/pkg/config"
@@ -10,6 +11,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type ConsulApi struct {
@@ -66,7 +68,7 @@ func (c *ConsulApi) ServiceWatch(service string, handle watch.HandlerFunc) {
 	w.Handler = handle
 	err = w.RunWithClientAndHclog(c.GetClient(), nil)
 	if err != nil {
-		log.Fatalln("consul watch error", err)
+		log.Fatalln("consul ServiceWatch error", err)
 	}
 }
 
@@ -108,6 +110,92 @@ func (c *ConsulApi) Service(service string) ([]*api.ServiceEntry, error) {
 		return nil, err
 	}
 	return servers, nil
+}
+
+// WatchKeyToPath watch key or keyprefix  to path
+// t 默认 目录监控 path 目录 + key 取文件部分
+// t=key path 目录 + key 取文件部分
+// t=source 转 t=file path=key
+// t=file path是空=key 必须是文件(含路径)
+func (c *ConsulApi) WatchKeyToPath(key string, path string, t string) {
+	if t == "source" || (t == "file" && path == "") {
+		t = "file"
+		path = key
+	}
+	key = strings.TrimLeft(key, "/")    //去除/开始
+	path = strings.TrimRight(path, "/") //去除/结束
+	params := make(map[string]interface{})
+	params["type"] = "keyprefix"
+	if t == "key" || t == "file" {
+		params["type"] = "key"
+		params["key"] = key
+	} else {
+		t = "keyprefix"
+		params["prefix"] = key
+	}
+	w, err := watch.Parse(params)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	w.Handler = func(u uint64, i interface{}) {
+		if i == nil {
+			return //不存在key
+		}
+		var kvs = make(api.KVPairs, 0)
+		if s, ok := i.(*api.KVPair); ok {
+			kvs = append(kvs, s)
+		} else {
+			kvs = i.(api.KVPairs)
+		}
+		for _, kv := range kvs {
+			if kv.Value == nil {
+				continue //目录页返回
+			}
+			var file string
+			last := Strrpos(kv.Key, "/", 0)
+			if last > 0 {
+				file = Substr(kv.Key, uint(last)+1, -1)
+			} else {
+				file = kv.Key
+			}
+			var dir string
+			if t == "keyprefix" {
+				sub := strings.TrimPrefix(kv.Key, key) //去除前缀
+				sub = strings.TrimSuffix(sub, file)    //去除后缀
+				sub = strings.Trim(sub, "/")           //去除前后
+				//log.Println("consul PathWatch kv sub:", sub, "file:", file)
+				if sub != "" && path != "" {
+					dir = path + "/" + sub
+				} else if sub == "" && path != "" {
+					dir = path
+				} else if sub != "" && path == "" {
+					dir = sub
+				}
+			} else {
+				dir = path
+				if t == "file" && path != "" {
+					last := Strrpos(path, "/", 0)
+					if last > 0 {
+						dir = Substr(path, 0, last)
+						file = Substr(path, uint(last)+1, -1)
+					}
+				}
+			}
+			if dir != "" {
+				os.MkdirAll(dir, os.ModePerm) //可能出错
+				file = dir + "/" + file
+			}
+			os.WriteFile(file, kv.Value, os.ModePerm)
+		}
+	}
+	err = w.RunWithClientAndHclog(c.GetClient(), nil)
+	if err != nil {
+		log.Fatalln("consul WatchKeyToPath error", err)
+	}
+}
+
+func (c *ConsulApi) WatchPathKey(path string, key string, t string) {
+	//todo https://github.com/fsnotify/fsnotify
 }
 
 // GetAgentServiceCheck 健康检查 checkPath!=tcp 走http 为空时 默认/health
@@ -199,7 +287,8 @@ func SetAgentServiceProxyFrp(service *api.AgentServiceRegistration, remotePort i
 	var pxyCfgs = map[string]config.ProxyConf{service.ID: pxyCfg}
 	var visitorCfgs = map[string]config.VisitorConf{service.ID: visitorCfg}
 	svc, err := client.NewService(cfg, pxyCfgs, visitorCfgs, "")
-	err = svc.Run()
+	ctx := context.Background()
+	err = svc.Run(ctx)
 	if err != nil {
 		panic(err)
 	}

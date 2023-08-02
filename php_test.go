@@ -3,6 +3,7 @@ package php2go
 import (
 	"bytes"
 	"fmt"
+	"github.com/hashicorp/consul/api"
 	"log"
 	"os"
 	"reflect"
@@ -377,6 +378,51 @@ func TestConnection(t *testing.T) {
 
 	log.Println("server ip:", GetInBoundIP())
 	log.Println("local ip", GetOutBoundIP())
+}
+
+func TestConsulApi_WatchKeyToPath(t *testing.T) {
+	consul, err := NewConsul("", "")
+	if err != nil {
+		panic("consul connection error:" + err.Error())
+	}
+	//构造数据
+	file := "test/sub/sub2/file.txt"
+	value := []byte("test")
+	var bt []byte
+	consul.GetClient().KV().Put(&api.KVPair{Key: file, Value: value}, nil)
+
+	go consul.WatchKeyToPath(file, "test", "key")
+	time.Sleep(1 * time.Second)
+	bt, _ = os.ReadFile("test/file.txt")
+	equal(t, "test", string(bt))
+
+	go consul.WatchKeyToPath(file, "test/file.txt", "file")
+	time.Sleep(1 * time.Second)
+	bt, _ = os.ReadFile("test/file.txt")
+	equal(t, value, bt)
+	log.Println(bt, 1111)
+
+	go consul.WatchKeyToPath(file, "test/file.txt", "source")
+	time.Sleep(1 * time.Second)
+	bt, _ = os.ReadFile(file)
+	equal(t, value, bt)
+
+	go consul.WatchKeyToPath("test", "test", "")
+	time.Sleep(1 * time.Second)
+	bt, _ = os.ReadFile(file)
+	equal(t, value, bt)
+
+	go consul.WatchKeyToPath("test", "test/new/test", "")
+	time.Sleep(1 * time.Second)
+	bt, _ = os.ReadFile("test/new/" + file)
+	equal(t, value, bt)
+
+	//清理数据
+	os.RemoveAll("test")
+	consul.GetClient().KV().DeleteTree("test", nil)
+	//ch := make(chan int, 1)
+	//<-ch
+	//log.Println(1111)
 }
 
 // Expected to be equal.
