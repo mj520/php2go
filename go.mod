@@ -1,6 +1,6 @@
 module github.com/mj520/php2go
 
-go 1.20
+go 1.18
 
 require (
 	github.com/fatedier/frp v0.51.2

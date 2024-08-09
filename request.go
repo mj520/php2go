@@ -125,7 +125,7 @@ func HttpJson(url string, data interface{}) ([]byte, error) {
 
 // GetClientIp 获取客户端IP
 func GetClientIp(r *http.Request) (ip string) {
-	headers := []string{"X-Real-IP", "X-Forwarded-For"}
+	headers := []string{"Client-Ip", "X-Forwarded-For", "X-Real-IP"}
 	for _, header := range headers {
 		ip = r.Header.Get(header)
 		if ip != "" {
@@ -143,4 +143,24 @@ func GetClientIp(r *http.Request) (ip string) {
 		ip = "127.0.0.1"
 	}
 	return ip
+}
+
+// GetRequestParam 获取请求参数并带有默认值，同时去除空格
+func GetRequestParam(r *http.Request, key string, defaultValue string) string {
+	// 尝试从 URL 查询字符串中获取参数
+	value := r.URL.Query().Get(key)
+	// 如果 URL 查询字符串中没有参数，尝试从 POST 表单中获取参数
+	if value == "" {
+		// 确保解析了 POST 表单数据
+		if err := r.ParseForm(); err == nil {
+			value = r.PostFormValue(key)
+		}
+	}
+	// 去除参数值中的空格
+	value = strings.TrimSpace(value)
+	// 如果参数值为空，则返回默认值
+	if value == "" {
+		return defaultValue
+	}
+	return value
 }
