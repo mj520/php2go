@@ -106,8 +106,86 @@ func GetInterfaceToInt(value interface{}) int {
 	return it
 }
 
-//GetInterfaceToFloat interface 转 float64
-func GetInterfaceToFloat(value interface{}) float64 {
+// GetInterfaceToInt64 将 interface{} 类型的值转换为 int64 类型
+func GetInterfaceToInt64(value interface{}) int64 {
+	var it int64
+	switch v := value.(type) {
+	case uint:
+		it = int64(v)
+	case int8:
+		it = int64(v)
+	case uint8:
+		it = int64(v)
+	case int16:
+		it = int64(v)
+	case uint16:
+		it = int64(v)
+	case int32:
+		it = int64(v)
+	case uint32:
+		it = int64(v)
+	case int64:
+		it = v
+	case uint64:
+		it = int64(v)
+	case float32:
+		it = int64(v)
+	case float64:
+		it = int64(v)
+	case string:
+		var err error
+		it, err = strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			// 处理转换失败的情况，这里简单返回 0
+			it = 0
+		}
+	default:
+		// 若无法转换，尝试将其当作 int64 类型，若失败则会触发 panic
+		it = v.(int64)
+	}
+	return it
+}
+
+// GetInterfaceToFloat 将 interface{} 类型的值转换为 float32 类型
+func GetInterfaceToFloat(value interface{}) float32 {
+	var it float32
+	switch v := value.(type) {
+	case uint:
+		it = float32(v)
+	case int8:
+		it = float32(v)
+	case uint8:
+		it = float32(v)
+	case int16:
+		it = float32(v)
+	case uint16:
+		it = float32(v)
+	case int32:
+		it = float32(v)
+	case uint32:
+		it = float32(v)
+	case int64:
+		it = float32(v)
+	case uint64:
+		it = float32(v)
+	case float32:
+		it = v
+	case float64:
+		it = float32(v)
+	case string:
+		floatValue, err := strconv.ParseFloat(v, 32)
+		if err == nil {
+			it = float32(floatValue)
+		}
+	default:
+		// 若无法转换，尝试将其当作 float32 类型，若失败则会触发 panic
+		it = v.(float32)
+	}
+	return it
+}
+
+//GetInterfaceToFloat64 interface 转 float64
+func GetInterfaceToFloat64(value interface{}) float64 {
 	var it float64
 	switch value.(type) {
 	case uint:
@@ -148,4 +226,13 @@ func GetInterfaceToFloat(value interface{}) float64 {
 		break
 	}
 	return it
+}
+
+// ConvertSliceToInterface 将任意类型的切片转换为 []interface{}
+func ConvertSliceToInterface[T any](slice []T) []interface{} {
+	interfaceSlice := make([]interface{}, len(slice))
+	for i, value := range slice {
+		interfaceSlice[i] = value
+	}
+	return interfaceSlice
 }
